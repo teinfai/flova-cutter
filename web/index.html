@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flova Cutter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #fff; --surface: #fff; --soft: #f8fafc; --text: #0f172a; --muted: #475569;
+  --line: #e2e8f0; --edge: #909cae; --primary: #2563eb; --on-primary: white;
+  --tint: #eff6ff; --success: #2563eb; --good-bg: #eff6ff; --danger: #a32235;
+  --error-bg: #fff4f5; --focus: #1d4ed8; --progress: #2563eb;
+  --body: "Plus Jakarta Sans", Arial, sans-serif; --heading: var(--body); --radius: 6px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; color: var(--text); background: var(--bg); font: 400 1rem/1.5 var(--body); }
+button, input, select { font: inherit; }
+button, select, label:has(input[type=radio]), a { cursor: pointer; }
+button, a, input, select { -webkit-tap-highlight-color: transparent; }
+button { color: inherit; }
+button:disabled { cursor: default; }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+[hidden] { display: none !important; }
+svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.symbols, .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+h1,h2,h3,p,ul,fieldset { margin: 0; }
+h1,h2,h3 { font-family: var(--heading); }
+.top { border-bottom: 1px solid var(--line); background: var(--surface); }
+.nav, main { width: min(880px, calc(100% - 80px)); margin-inline: auto; }
+.nav { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font: 800 1.25rem/1 var(--heading); letter-spacing: -.055em; }
+.mark { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 9px; background: var(--primary); color: var(--on-primary); }
+.mark svg { width: 23px; height: 23px; stroke-width: 1.9; }
+.help { min-height: 36px; display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: .875rem; font-weight: 600; text-decoration: none; }
+.help svg { width: 16px; }
+.help:hover, .link-button:hover { text-decoration: underline; text-underline-offset: 3px; }
+main { padding: clamp(36px,5vw,74px) 0 112px; }
+.intro { margin-bottom: 26px; }
+h1 { font-size: clamp(2.35rem,4.2vw,3.6rem); font-weight: 700; letter-spacing: -.068em; line-height: 1.08; }
+.intro p { margin-top: 12px; color: var(--muted); }
+.workspace { display: grid; gap: 36px; min-width: 0; }
+.controls { display: grid; grid-template-columns: minmax(170px, 210px) minmax(0, 1fr); align-items: start; gap: 0 8px; position: relative; min-width: 0; }
+.controls::before { content: ""; grid-area: 1 / 1 / 2 / -1; align-self: stretch; border: 1px solid var(--edge); border-radius: 9px; background: var(--surface); pointer-events: none; }
+.step-choose, .step-paste { display: contents; }
+.target-field, .paste-field { min-width: 0; z-index: 1; }
+.target-field { grid-area: 1 / 1; padding: 12px 8px 9px 16px; position: relative; }
+.target-field::after { content: ""; position: absolute; right: -4px; top: 15px; bottom: 15px; width: 1px; background: var(--line); }
+.field-label { display: block; color: var(--muted); font-size: .75rem; font-weight: 700; line-height: 1.4; }
+.select-box { position: relative; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; border-radius: 3px; font-weight: 700; }
+.select-box span { min-width: 0; }
+#selected-limit { margin-inline-start: 5px; font-size: .75rem; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.select-box svg { width: 15px; color: var(--muted); }
+.select-box select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; }
+.select-box:has(select:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+select option { background: var(--surface); color: var(--text); }
+.paste-field { grid-area: 1 / 2; display: grid; grid-template-columns: minmax(0,1fr) auto; column-gap: 12px; padding: 12px 12px 9px; }
+.paste-field .field-label { grid-area: 1 / 1; }
+.link-field { grid-area: 2 / 1; }
+input[type=text] { min-width: 0; border: 0; border-radius: 3px; background: transparent; color: var(--text); min-height: 44px; }
+input::placeholder { color: var(--muted); opacity: 1; }
+#link { width: 100%; padding: 0 2px; font-size: 1rem; text-overflow: ellipsis; }
+.button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 1px solid transparent; border-radius: var(--radius); font-size: .875rem; font-weight: 700; line-height: 1.35; }
+.primary { background: var(--primary); color: var(--on-primary); }
+.primary:hover { filter: brightness(.93); }
+.secondary, .arrow { border: 1px solid var(--line); background: var(--surface); }
+.secondary:hover, .arrow:enabled:hover { border-color: var(--edge); background: var(--soft); }
+#start { grid-area: 1 / 2 / 3; align-self: center; min-width: 90px; }
+#start svg { width: 15px; }
+.save-block { grid-area: 3 / 1 / 4 / -1; margin-top: 7px; }
+.save-line { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 8px; color: var(--muted); font-size: .8125rem; }
+.save-line svg { width: 15px; }
+.save-line b { font-weight: 600; color: var(--text); }
+.link-button { background: transparent; color: var(--primary); border: 0; font-weight: 700; min-height: 36px; padding: 0 3px; font-size: .8125rem; }
+.modes { grid-area: 2 / 1 / 3 / -1; padding: 10px 0 0; border: 0; display: flex; flex-wrap: wrap; gap: 8px 20px; min-width: 0; }
+.radio-label { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: .875rem; }
+.radio-label input { accent-color: var(--primary); width: 17px; height: 17px; flex: none; margin: 0; }
+.time-group { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; }
+#time { width: 7.5ch; text-align: center; font-variant-numeric: tabular-nums; background: var(--surface); border: 1px solid var(--edge); }
+.error-text { grid-column: 1 / -1; flex-basis: 100%; color: var(--danger); font-size: .8125rem; font-weight: 600; padding-top: 5px; }
+[aria-invalid=true] { box-shadow: inset 0 -2px var(--danger); }
+.setup { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; color: var(--muted); margin: 0 0 20px; font-size: .8125rem; }
+.meter { background: var(--line); border-radius: 4px; overflow: hidden; height: 4px; }
+.setup .meter { width: 100px; height: 3px; }
+.meter i { display: block; width: 100%; height: 100%; background: var(--progress); transform: scaleX(0); transform-origin: left; }
+.output { border-top: 1px solid var(--line); padding-top: 27px; min-width: 0; }
+.section-label { display: flex; align-items: center; gap: 8px; font-size: .75rem; font-weight: 700; letter-spacing: .055em; text-transform: uppercase; color: var(--muted); }
+.section-label svg { width: 16px; height: 16px; }
+.done-head { margin-top: 12px; }
+.result-heading { display: flex; align-items: flex-start; gap: 10px; }
+.result-heading svg { width: 25px; height: 25px; color: var(--success); margin-top: 4px; }
+h2.result-title { font-size: clamp(1.35rem,2.4vw,1.9rem); font-weight: 700; line-height: 1.2; letter-spacing: -.045em; text-wrap: pretty; }
+.facts { color: var(--muted); font-size: .9rem; margin-top: 7px; }
+.status-box { padding-top: 12px; }
+.status-line { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+.status-line .button { flex: none; }
+.status-line p { font-size: 1rem; font-weight: 600; }
+.status-box .meter { margin-top: 10px; }
+.status-box.error { background: var(--error-bg); color: var(--danger); border: 1px solid currentColor; border-radius: var(--radius); padding: 10px 14px; margin-top: 12px; }
+.status-box.error button { color: var(--text); }
+.empty { display: flex; align-items: center; gap: 16px; padding: 30px 0 12px; color: var(--muted); font-size: .9375rem; }
+.empty-symbol { width: 52px; height: 52px; display: grid; place-items: center; color: var(--primary); background: var(--tint); border: 1px solid var(--line); border-radius: var(--radius); }
+.empty-symbol svg { width: 26px; height: 26px; }
+.gallery { margin-top: 23px; }
+.gallery-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; }
+.source { display: flex; gap: 7px; align-items: center; font-weight: 600; font-size: .8125rem; min-width: 0; }
+.source svg { color: var(--muted); width: 16px; }
+.paging { display: flex; align-items: center; gap: 8px; }
+#range { font: 500 .75rem/1.3 var(--body); color: var(--muted); font-variant-numeric: tabular-nums; }
+.arrow { width: 36px; height: 36px; border-radius: var(--radius); display: grid; place-items: center; }
+.arrow:disabled { color: var(--muted); background: var(--soft); }
+.arrow svg { width: 15px; }
+.left { transform: rotate(180deg); }
+.rail { position: relative; }
+.rail::before, .rail::after { content: ""; position: absolute; top: 0; bottom: 0; width: 5px; z-index: 1; pointer-events: none; opacity: 0; }
+.rail::before { right: 100%; box-shadow: 3px 0 5px var(--surface); }
+.rail::after { left: 100%; box-shadow: -3px 0 5px var(--surface); }
+.rail.more-left::before, .rail.more-right::after { opacity: 1; }
+.parts { --slots: 1; --gap: 12px; padding: 0; margin: 0; display: flex; gap: var(--gap); list-style: none; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.parts::-webkit-scrollbar { display: none; }
+.part { flex: 0 0 calc((100% + var(--gap)) / var(--slots) - var(--gap)); min-width: 0; scroll-snap-align: start; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.part:has(.part-preview:hover), .part:focus-within { border-color: var(--focus); }
+.part-preview { display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; text-align: left; }
+.part-preview:focus-visible { outline-offset: -3px; }
+.part-thumb { position: relative; display: block; }
+.part-play { position: absolute; right: 8px; bottom: 8px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: white; background: #172033; }
+.part-play svg { width: 14px; height: 14px; fill: currentColor; stroke: none; }
+.part-preview:is(:hover,:focus-visible) .part-play { color: var(--on-primary); background: var(--primary); }
+.part img { display: block; width: 100%; height: auto; aspect-ratio: 16/9; object-fit: cover; background: var(--soft); }
+.part-body { display: grid; gap: 3px; padding: 12px 13px 13px; font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.part-body strong { font-size: .9375rem; margin-bottom: 2px; }
+.part-body small { color: var(--muted); font-size: .75rem; }
+.part.new { animation: arrive .24s ease-out both; }
+@keyframes arrive { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.folder { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px 16px; margin-top: 22px; border-top: 1px solid var(--line); padding-top: 20px; }
+.folder-label { grid-column: 1/-1; color: var(--muted); font-size: .75rem; font-weight: 700; }
+.path { min-width: 0; min-height: 41px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--line); background: var(--soft); border-radius: var(--radius); position: relative; }
+.path svg { width: 16px; color: var(--muted); }
+.path-text { flex: 1; white-space: nowrap; overflow: hidden; min-width: 0; font: .775rem/1.5 ui-monospace, Menlo, Consolas, monospace; }
+.path-unit { position: absolute; visibility: hidden; font: .775rem/1.5 ui-monospace, Menlo, Consolas, monospace; }
+.tooltip { position: absolute; left: 0; bottom: calc(100% + 5px); z-index: 3; padding: 10px 12px; border-radius: 6px; max-width: 100%; width: max-content; background: #1e293b; color: white; font-size: .75rem; overflow-wrap: anywhere; visibility: hidden; }
+.path:hover .tooltip, .path:focus-visible .tooltip { visibility: visible; }
+.folder-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.toast { position: fixed; z-index: 6; left: 50%; bottom: 64px; transform: translateX(-50%); background: #272a30; border: 1px solid #676a70; color: white; padding: 10px 16px; font: 500 .875rem/1.4 system-ui,sans-serif; border-radius: 8px; text-align: center; max-width: calc(100% - 32px); width: max-content; pointer-events: none; }
+.toast:empty { display: none; }
+.preview { width: min(960px, calc(100% - 32px)); max-width: none; max-height: calc(100dvh - 32px); padding: clamp(16px, 3vw, 28px); border: 1px solid var(--line); border-radius: var(--radius); color: var(--text); background: var(--surface); overscroll-behavior: contain; }
+.preview::backdrop { background: rgb(8 12 24 / 68%); }
+.preview-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.preview-head h2 { font-size: 1.5rem; line-height: 1.25; letter-spacing: -.035em; }
+.preview-meta, .preview-count { color: var(--muted); font-size: .875rem; font-variant-numeric: tabular-nums; }
+.preview-meta { margin-top: 4px; }
+.preview .arrow { width: 44px; height: 44px; flex: none; color: var(--text); }
+.preview .arrow:disabled { color: var(--muted); border-style: dashed; }
+.preview-stage { position: relative; display: grid; grid-template-columns: 44px minmax(0,1fr) 44px; align-items: center; gap: 8px; margin-top: 16px; }
+.preview-stage:has(#preview-prev[hidden]) { grid-template-columns: minmax(0,1fr); }
+.preview-media { width: 100%; aspect-ratio: 16/9; display: block; object-fit: contain; border-radius: var(--radius); background: #10131a; }
+.preview-count { text-align: center; margin-top: 6px; }
+#preview-error { margin-top: 8px; font-size: .875rem; }
+.preview-file { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin-block: 16px; }
+.preview-file code { font: 600 .875rem/1.5 ui-monospace, Menlo, Consolas, monospace; }
+.preview-file .path { flex: 1 1 240px; }
+.preview-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+@media (max-width: 640px) {
+  .preview-stage { display: block; }
+  .preview-stage .arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 1; }
+  #preview-prev { left: 4px; }
+  #preview-next { right: 4px; }
+  .nav, main { width: calc(100% - 32px); }
+  .nav { min-height: 62px; }
+  main { padding-top: 30px; }
+  .intro { margin-bottom: 20px; }
+  .intro p { font-size: .9375rem; }
+  .workspace { gap: 22px; }
+  .controls { grid-template-columns: minmax(0,1fr); }
+  .controls::before { grid-area: 1 / 1 / 4 / 2; }
+  .target-field { grid-area: 1 / 1; padding: 10px 12px 0; }
+  .target-field::after { display: none; }
+  .paste-field { grid-area: 3 / 1; border-top: 1px solid var(--line); margin: 4px 12px 0; padding: 10px 0; gap: 0 8px; }
+  .modes { grid-area: 2 / 1; padding-inline: 12px; }
+  .save-block { grid-area: 4 / 1; }
+  .folder { grid-template-columns: minmax(0,1fr); }
+  .folder-actions { margin-top: 4px; }
+  .output { padding-top: 20px; }
+  .gallery-head { align-items: start; }
+  .gallery { margin-top: 16px; }
+  .done-head { margin-top: 10px; }
+  .result-heading svg { width: 21px; height: 21px; margin-top: 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; scroll-behavior: auto !important; transition: none !important; }
+}
+.help, .link-button, .arrow { min-height: 44px; min-width: 44px; }
+.save-block { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 22px; }
+.quality-switch { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); }
+.quality-switch button { min-height: 44px; border: 0; padding: 0 12px; border-radius: 5px; background: var(--surface); color: var(--muted); font-weight: 700; font-size: .8125rem; }
+.quality-switch [aria-pressed=true] { background: var(--tint); color: var(--focus); }
+#quality-note { margin-top: 3px; color: var(--muted); font-size: .75rem; }
+.save-line, .save-line span, .source, .status-line p { min-width: 0; overflow-wrap: anywhere; }
+#start:disabled { background: var(--muted); }
+@media (max-width:640px) { .save-block { flex-direction: column; } }
+</style>
+</head>
+<body>
+<svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="i-cut" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8.2 8.2 12 12m-12-4.4 12-12"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 2-2.5 2-2.5 4m0 3h.01"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M15 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M6 3v18l15-9Z"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.7 2.7L16 9.3"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4m-4 6h4M17 9h4m-4 6h4"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></symbol>
+  </defs>
+</svg>
+<header class="top">
+  <div class="nav">
+    <div class="brand"><span class="mark"><svg aria-hidden="true"><use href="#i-cut"/></svg></span>Flova Cutter</div>
+    <a class="help" href="https://github.com/teinfai/flova-cutter#how-to-use" target="_blank" rel="noreferrer" id="help"><svg aria-hidden="true"><use href="#i-help"/></svg>Help</a>
+  </div>
+</header>
+<main>
+  <div class="intro">
+    <h1 id="page-title">Cut a video</h1>
+    <p>Paste a YouTube link to download and cut a video on your computer.</p>
+  </div>
+  <div class="setup" id="setup" hidden>
+    <span>Getting video tools ready. This happens once.</span>
+    <div class="meter" id="setup-meter" role="progressbar" aria-label="Getting video tools ready" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+  </div>
+  <form class="workspace" id="form" novalidate>
+    <div class="controls">
+      <div class="step step-choose">
+        <div class="target-field">
+          <label class="field-label" for="target">Cut for</label>
+          <div class="select-box">
+            <span aria-hidden="true"><span id="selected-target">Flova upload</span><small id="selected-limit">8 min</small></span>
+            <svg aria-hidden="true"><use href="#i-down"/></svg>
+            <select id="target">
+            </select>
+          </div>
+        </div>
+        <fieldset class="modes" id="modes" hidden>
+          <legend class="sr">Reference clips</legend>
+          <label class="radio-label"><input name="mode" type="radio" id="whole" checked><span id="whole-label">Whole video</span></label>
+          <div class="time-group">
+            <label class="radio-label"><input name="mode" type="radio" id="one"><span id="from-label">One clip from</span></label>
+            <input type="text" id="time" aria-label="Clip start time" aria-describedby="time-error" value="0:00" placeholder="mm:ss" spellcheck="false" autocomplete="off">
+            <p class="error-text" id="time-error" hidden></p>
+          </div>
+        </fieldset>
+      </div>
+      <div class="step step-paste">
+        <div class="paste-field">
+          <label class="field-label" for="link">YouTube link</label>
+          <div class="link-field"><input type="text" id="link" inputmode="url" placeholder="Paste a YouTube link" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="link-error"></div>
+          <p class="error-text" id="link-error" hidden></p>
+          <button class="button primary" type="submit" id="start" disabled>Start <svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        </div>
+        <div class="save-block">
+          <div id="quality" hidden>
+            <div class="quality-switch" role="group" aria-label="Upload quality" aria-describedby="quality-note">
+              <button type="button" data-quality="best" aria-pressed="true">Best quality</button>
+              <button type="button" data-quality="fast" aria-pressed="false">Fast</button>
+            </div>
+            <p id="quality-note">Sharper picture, takes longer.</p>
+          </div>
+          <div class="save-line"><svg aria-hidden="true"><use href="#i-folder"/></svg><span>Saves to <b id="destination"></b></span>
+            <button type="button" class="link-button" id="change">Change</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <section class="step step-output output" aria-label="Output">
+      <h2 class="section-label"><svg aria-hidden="true"><use href="#i-layers"/></svg>Output files</h2>
+      <div class="done-head" id="done-head" hidden>
+        <div class="result-heading"><svg aria-hidden="true"><use href="#i-check"/></svg><h2 class="result-title" id="result-title"></h2></div>
+        <p class="facts" id="facts"></p>
+      </div>
+      <div class="status-box" id="status-box" hidden>
+        <div class="status-line"><p id="status"></p><button type="button" id="action" class="button secondary">Stop</button></div>
+        <div class="meter" id="job-meter" role="progressbar" aria-label="Cutting progress" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+      </div>
+      <div class="empty" id="empty"><span class="empty-symbol"><svg aria-hidden="true"><use href="#i-film"/></svg></span><p>Your parts will appear here as they’re cut.</p></div>
+      <div class="gallery" id="gallery" hidden>
+        <div class="gallery-head">
+          <p class="source" id="gallery-source"><svg aria-hidden="true"><use href="#i-film"/></svg><span></span></p>
+          <div class="paging"><span id="range"></span><button type="button" class="arrow" id="prev" aria-label="Previous files" aria-controls="parts"><svg class="left" aria-hidden="true"><use href="#i-next"/></svg></button><button type="button" class="arrow" id="next" aria-label="Next files" aria-controls="parts"><svg aria-hidden="true"><use href="#i-next"/></svg></button></div>
+        </div>
+        <span class="sr" id="rail-help">Use the left and right arrow keys to scroll the files.</span>
+        <div class="rail" id="rail"><ul id="parts" class="parts" tabindex="0" aria-label="Finished files" aria-describedby="rail-help"></ul></div>
+      </div>
+      <div class="folder" id="folder" hidden>
+        <span class="folder-label">Output folder</span>
+        <div class="path" id="path-box" tabindex="0" role="group">
+          <svg aria-hidden="true"><use href="#i-folder"/></svg><span class="path-text" id="path-text" aria-hidden="true"></span><span class="path-unit" aria-hidden="true">0</span>
+          <span id="path-tip" class="tooltip" aria-hidden="true"></span>
+        </div>
+        <div class="folder-actions">
+          <button type="button" class="button primary" id="open"><svg aria-hidden="true"><use href="#i-folder"/></svg>Open folder</button>
+          <button type="button" class="button secondary" id="copy"><svg aria-hidden="true"><use href="#i-copy"/></svg>Copy path</button>
+        </div>
+      </div>
+    </section>
+  </form>
+</main>
+<dialog class="preview" id="preview" aria-labelledby="preview-title" aria-describedby="preview-meta">
+  <div class="preview-head">
+    <div><h2 id="preview-title"></h2><p class="preview-meta" id="preview-meta"></p></div>
+    <button type="button" class="arrow" id="preview-close" aria-label="Close preview" autofocus><svg aria-hidden="true"><use href="#i-close"/></svg></button>
+  </div>
+  <div class="preview-stage">
+    <button type="button" class="arrow" id="preview-prev" aria-label="Previous part"><svg class="left" aria-hidden="true"><use href="#i-next"/></svg></button>
+    <div>
+      <video class="preview-media" id="preview-video" aria-labelledby="preview-title" controls playsinline preload="metadata"></video>
+      <img class="preview-media" id="preview-poster" alt="" hidden>
+    </div>
+    <button type="button" class="arrow" id="preview-next" aria-label="Next part"><svg aria-hidden="true"><use href="#i-next"/></svg></button>
+  </div>
+  <p id="preview-error" role="status" hidden>Preview not available. Open the folder to play it.</p>
+  <p class="preview-count" id="preview-count" aria-live="polite" aria-atomic="true"></p>
+  <div class="preview-file">
+    <code id="preview-name"></code>
+    <div class="path" id="preview-path" tabindex="0" role="group">
+      <span class="path-text" aria-hidden="true"></span><span class="path-unit" aria-hidden="true">0</span>
+      <span class="tooltip" aria-hidden="true"></span>
+    </div>
+  </div>
+  <div class="preview-actions" id="preview-actions">
+    <button type="button" class="button primary" id="preview-folder"><svg aria-hidden="true"><use href="#i-folder"/></svg>Show in folder</button>
+    <button type="button" class="button secondary" id="preview-copy"><svg aria-hidden="true"><use href="#i-copy"/></svg>Copy path</button>
+  </div>
+  <div id="preview-toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+</dialog>
+<div id="announcement" class="sr" role="status" aria-live="polite" aria-atomic="true"></div>
+<div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+<script>
+"use strict";
+function videoURL(text) {
+  const raw = text.trim();
+  if (!raw || /\s/.test(raw)) return null;
+  try {
+    const hasScheme = raw.toLowerCase().startsWith("https://") || raw.toLowerCase().startsWith("http://");
+    const url = new URL(hasScheme ? raw : "https://" + raw);
+    if (url.username || url.password || url.port) return null;
+    const host = url.hostname;
+    let id;
+    if (host === "youtu.be") {
+      id = url.pathname.match(/^\/([^/]+)\/?$/)?.[1];
+    } else if (["youtube.com", "www.youtube.com", "m.youtube.com", "music.youtube.com"].includes(host)) {
+      id = url.pathname === "/watch" ? url.searchParams.get("v") : url.pathname.match(/^\/(?:shorts|live|embed)\/([^/]+)\/?$/)?.[1];
+    }
+    return /^[A-Za-z0-9_-]{11}$/.test(id || "") ? url : null;
+  } catch {
+    return null;
+  }
+}
+function timestamp(url) {
+  const raw = url.searchParams.get("t");
+  if (!raw) return null;
+  if (/^\d+$/.test(raw)) return Number(raw);
+  const units = raw.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/i);
+  return units ? Number(units[1] || 0) * 3600 + Number(units[2] || 0) * 60 + Number(units[3] || 0) : null;
+}
+
+const $ = id => document.getElementById(id);
+const target = $("target");
+const link = $("link");
+const time = $("time");
+const parts = $("parts");
+const preview = $("preview");
+const player = $("preview-video");
+const motion = matchMedia("(prefers-reduced-motion: reduce)");
+const token = new URLSearchParams(location.search).get("t");
+let state;
+let job;
+let quality = "best";
+let completed = 0;
+let slots = 1;
+let followCuts = true;
+let explicitMode = false;
+let toastTimer;
+let previewCard;
+let previewIndex = 0;
+let backdropPressed = false;
+let starting = false;
+let pollTimer;
+let pollVersion = 0;
+let settingsQueue = Promise.resolve();
+let saving = 0;
+let errorMessage = "";
+let connectionError = "";
+let fieldJob = "";
+let announced = "";
+
+async function api(path, body) {
+  const options = {headers: {"X-Token": token}, cache: "no-store"};
+  if (body !== undefined) {
+    options.method = "POST";
+    options.headers["Content-Type"] = "application/json";
+    options.body = JSON.stringify(body);
+  }
+  const response = await fetch("/api/" + path, options).catch(error => {
+    connectionError = "Flova Cutter has closed. Open it again from its app icon.";
+    render();
+    throw error;
+  });
+  connectionError = "";
+  if (response.status === 204) return;
+  const value = await response.json();
+  if (!response.ok) throw value;
+  return value;
+}
+
+function working() {
+  return ["probe", "download", "cut"].includes(job?.phase);
+}
+function size(bytes) {
+  return bytes >= 1e9 ? (bytes / 1e9).toFixed(1) + " GB" : (bytes / 1e6).toLocaleString(undefined, {maximumFractionDigits: 1}) + " MB";
+}
+function mediaURL(name) {
+  return "/files/" + encodeURIComponent(name) + "?t=" + encodeURIComponent(token);
+}
+function fileInfo(index) {
+  const file = job.files[index];
+  return {...file, label: (job.target === "flova" ? "Part " : "Clip ") + (index + 1), size: size(file.bytes)};
+}
+function fullPath() {
+  const sep = state.os === "windows" ? String.fromCharCode(92) : "/";
+  return job.folder.endsWith(sep) ? job.folder : job.folder + sep;
+}
+function clock(seconds) {
+  seconds = Math.round(seconds);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor(seconds / 60) % 60;
+  return (hours ? hours + ":" + String(minutes).padStart(2,"0") : minutes) + ":" + String(seconds % 60).padStart(2,"0");
+}
+function parsedTime() {
+  if (!/^\d+(?::[0-5]\d){1,2}$/.test(time.value.trim())) return NaN;
+  return time.value.trim().split(":").reduce((sum, unit) => sum * 60 + Number(unit), 0);
+}
+function invalid(field, message) {
+  const error = $(field.id + "-error");
+  error.hidden = !message;
+  error.textContent = message;
+  field.setAttribute("aria-invalid", String(Boolean(message)));
+}
+function updateTarget() {
+  const option = target.selectedOptions[0];
+  const name = option.textContent.split(" · ")[0];
+  $("selected-target").textContent = name.replace(/ reference$/, "");
+  $("selected-limit").textContent = target.value === "flova" ? "8 min" : option.dataset.seconds + " s";
+  $("modes").hidden = target.value === "flova";
+  $("whole-label").textContent = "Whole video (a clip every " + option.dataset.seconds + " s)";
+  $("quality").hidden = target.value !== "flova";
+  mark("quality",quality);
+  $("quality-note").textContent = quality === "best" ? "Sharper picture, takes longer." : "Quicker, softer picture.";
+}
+function fillTimestamp() {
+  const url = videoURL(link.value);
+  const seconds = url && timestamp(url);
+  if (seconds == null || target.value === "flova") return;
+  time.value = Number.isSafeInteger(seconds) ? clock(seconds) : "";
+  if (!explicitMode) $("one").checked = true;
+}
+function fitPath(box, path, label) {
+  const node = box.querySelector(".path-text");
+  box.title = path;
+  box.setAttribute("aria-label", label + ", " + path);
+  box.querySelector(".tooltip").textContent = path;
+  const capacity = Math.max(1, Math.floor(node.clientWidth / (box.querySelector(".path-unit").getBoundingClientRect().width || 7.5)));
+  const head = Math.floor(capacity / 2);
+  node.textContent = capacity >= path.length ? path : path.slice(0,head) + "…" + path.slice(path.length - (capacity - head - 1));
+}
+function updatePath() {
+  if (!job) return;
+  if (!$("folder").hidden) fitPath($("path-box"), job.folder, "Output folder");
+  if (preview.open) fitPath($("preview-path"), fullPath() + $("preview-name").textContent, "File path");
+}
+function toast(message) {
+  clearTimeout(toastTimer);
+  const target = preview.open ? $("preview-toast") : $("toast");
+  target.textContent = message;
+  toastTimer = setTimeout(() => { target.textContent = ""; }, 2600);
+}
+async function copyText(text, message) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const previous = document.activeElement;
+    const field = document.createElement("textarea");
+    field.className = "sr";
+    field.value = text;
+    (preview.open ? preview : document.body).append(field);
+    field.focus({preventScroll:true});
+    field.select();
+    let copied = false;
+    try { copied = document.execCommand("copy"); } catch {}
+    field.remove();
+    previous.focus({preventScroll:true});
+    if (!copied) {
+      window.prompt("Copy the selected text.", text);
+      return;
+    }
+  }
+  toast(message);
+}
+function mark(group, value) {
+  for (const button of document.querySelectorAll("button[data-" + group + "]")) {
+    button.setAttribute("aria-pressed", String(button.dataset[group] === value));
+  }
+}
+function meter(element, value) {
+  element.firstElementChild.style.transform = "scaleX(" + value / 100 + ")";
+  element.setAttribute("aria-valuenow", String(Math.round(value)));
+}
+function cardStride() {
+  return parts.firstElementChild.getBoundingClientRect().width + parseFloat(getComputedStyle(parts).getPropertyValue("--gap"));
+}
+function updatePaging() {
+  if ($("gallery").hidden || !parts.firstElementChild) return;
+  const stride = cardStride();
+  const first = stride > 0 ? Math.round(parts.scrollLeft / stride) : 0;
+  const left = parts.scrollLeft > 1;
+  const right = parts.scrollWidth - parts.clientWidth - parts.scrollLeft > 1;
+  $("prev").disabled = !left;
+  $("next").disabled = !right;
+  $("prev").hidden = $("next").hidden = completed <= slots;
+  $("rail").classList.toggle("more-left", left);
+  $("rail").classList.toggle("more-right", right);
+  const last = Math.min(first + slots, completed);
+  $("range").textContent = (last > first + 1 ? (first + 1) + "–" : "") + last + " of " + completed;
+}
+function sizeGallery() {
+  if (!parts.clientWidth) return;
+  const minWidth = parts.clientWidth < 385 ? 145 : 175;
+  slots = Math.max(1, Math.floor((parts.clientWidth + 12) / (minWidth + 12)));
+  parts.style.setProperty("--slots",slots);
+  updatePaging();
+}
+function scrollFiles(direction) {
+  if (!parts.firstElementChild) return;
+  followCuts = false;
+  const stride = cardStride();
+  parts.scrollTo({ left: (Math.round(parts.scrollLeft / stride) + direction * slots) * stride, behavior: motion.matches ? "instant" : "smooth" });
+}
+$("prev").onclick = () => scrollFiles(-1);
+$("next").onclick = () => scrollFiles(1);
+parts.addEventListener("keydown", event => {
+  if (!["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) return;
+  event.preventDefault();
+  followCuts = false;
+  if (event.key === "Home" || event.key === "End") parts.scrollLeft = event.key === "Home" ? 0 : parts.scrollWidth;
+  else scrollFiles(event.key === "ArrowLeft" ? -1 : 1);
+});
+parts.addEventListener("scroll", updatePaging, { passive: true });
+for (const event of ["pointerdown","wheel","focusin"]) parts.addEventListener(event, () => { followCuts = false; }, { passive: true });
+
+function updatePreviewPaging() {
+  const previous = $("preview-prev");
+  const next = $("preview-next");
+  previous.hidden = next.hidden = $("preview-count").hidden = job.mode === "one";
+  if (job.mode === "one") return;
+  const first = previewIndex === 0;
+  const last = previewIndex === completed - 1;
+  const focused = document.activeElement;
+  previous.disabled = first;
+  next.disabled = last;
+  if (first && focused === previous && !last) next.focus();
+  if (last && focused === next && !first) previous.focus();
+  const count = (previewIndex + 1) + " of " + completed;
+  if ($("preview-count").textContent !== count) $("preview-count").textContent = count;
+}
+function showPreviewPart(index) {
+  if (index < 0 || index >= completed) return;
+  previewIndex = index;
+  const file = fileInfo(index);
+  $("preview-title").textContent = file.label;
+  $("preview-meta").textContent = clock(file.start) + " – " + clock(file.end) + " · " + clock(file.seconds) + " · " + file.size + " · " + job.height + "p mp4";
+  $("preview-name").textContent = file.name;
+  if (!preview.open) preview.showModal();
+  updatePath();
+  updatePreviewPaging();
+  $("preview-error").hidden = $("preview-poster").hidden = true;
+  player.hidden = false;
+  player.poster = mediaURL(file.name + ".jpg");
+  player.src = mediaURL(file.name);
+  player.play().catch(() => {});
+}
+parts.addEventListener("click", event => {
+  const card = event.target.closest("button.part-preview");
+  if (!card) return;
+  previewCard = card;
+  followCuts = false;
+  $("toast").textContent = "";
+  showPreviewPart(Number(card.dataset.index));
+});
+player.addEventListener("error", () => {
+  if (!preview.open || !player.error) return;
+  player.hidden = true;
+  $("preview-poster").src = player.poster;
+  $("preview-poster").hidden = $("preview-error").hidden = false;
+});
+$("preview-close").onclick = () => preview.close();
+$("preview-prev").onclick = () => showPreviewPart(previewIndex - 1);
+$("preview-next").onclick = () => showPreviewPart(previewIndex + 1);
+$("preview-folder").onclick = () => openFile(job.files[previewIndex].name);
+$("preview-copy").onclick = () => copyText($("preview-path").title, "Path copied");
+preview.addEventListener("keydown", event => {
+  if (job.mode === "one" || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+  event.preventDefault();
+  showPreviewPart(previewIndex + (event.key === "ArrowLeft" ? -1 : 1));
+}, true);
+function onBackdrop(event) {
+  if (event.target !== preview) return false;
+  const rect = preview.getBoundingClientRect();
+  return event.clientX < rect.left || event.clientX >= rect.right || event.clientY < rect.top || event.clientY >= rect.bottom;
+}
+preview.addEventListener("pointerdown", event => { backdropPressed = onBackdrop(event); });
+preview.addEventListener("click", event => {
+  if (backdropPressed && onBackdrop(event)) preview.close();
+  backdropPressed = false;
+});
+preview.addEventListener("close", () => {
+  if (preview.open) return;
+  player.pause();
+  player.removeAttribute("src");
+  player.load();
+  $("preview-toast").textContent = "";
+  (previewCard?.isConnected ? previewCard : $("link")).focus();
+  previewCard = null;
+});
+
+function addFiles(count, live) {
+  const files = document.createDocumentFragment();
+  while (completed < count) {
+    const file = fileInfo(completed);
+    const card = document.createElement("li");
+    card.className = live ? "part new" : "part";
+    card.innerHTML = '<button type="button" class="part-preview" aria-haspopup="dialog" aria-controls="preview"><span class="part-thumb"><img alt="" width="320" height="180" loading="lazy"><span class="part-play"><svg aria-hidden="true"><use href="#i-play"/></svg></span></span><span class="part-body"><strong></strong><span></span><small></small></span></button>';
+    card.firstElementChild.dataset.index = completed;
+    card.firstElementChild.setAttribute("aria-label","Preview " + file.label);
+    card.querySelector("img").src = mediaURL(file.name + ".jpg");
+    const body = card.querySelector(".part-body");
+    body.children[0].textContent = file.label;
+    body.children[1].textContent = clock(file.start) + " – " + clock(file.end);
+    body.children[2].textContent = clock(file.seconds) + " · " + file.size;
+    files.append(card);
+    completed++;
+  }
+  parts.append(files);
+  if (preview.open) updatePreviewPaging();
+}
+function clearFiles() {
+  if (preview.open) preview.close();
+  completed = 0;
+  followCuts = true;
+  parts.replaceChildren();
+  parts.scrollLeft = 0;
+}
+
+function showResult() {
+  const ref = job.target !== "flova";
+  const unit = ref ? "clip" : "part";
+  const targetInfo = state.targets.find(item => item.id === job.target);
+  const model = targetInfo.label.split(" · ")[0].replace(/ reference$/, "");
+  let heading = completed + " " + unit + (completed === 1 ? "" : "s") + " ready for " + model;
+  const single = job.mode === "one";
+  if (single) {
+    const file = fileInfo(0);
+    heading += " · " + targetInfo.seconds + " s from " + clock(file.start) + " · " + file.size;
+  }
+  $("result-title").textContent = heading;
+  const limit = ref ? "up to " + targetInfo.seconds + " s each" : "each under 8 min";
+  const total = job.files.reduce((sum, part) => sum + part.bytes, 0);
+  $("facts").textContent = !completed ? "" : job.height + "p · mp4" + (single ? "" : " · " + limit + " · " + size(total) + " total");
+}
+
+function showError(error) {
+  if (connectionError) return;
+  const message = error?.message || "Something went wrong. Try again.";
+  if (error?.code === "not_link" || error?.code === "start_past_end") {
+    const field = error.code === "not_link" ? link : time;
+    invalid(field, message);
+    field.focus();
+    $("announcement").textContent = message;
+  } else {
+    errorMessage = error?.code ? message : "Something went wrong. Try again.";
+  }
+  render();
+}
+
+function render() {
+  const busy = working();
+  const done = job?.phase === "done";
+  const toolsError = state?.tools.error;
+  const fieldError = ["not_link", "start_past_end"].includes(job?.error?.code);
+  const issue = connectionError || toolsError || errorMessage || (!fieldError && job?.error?.message);
+  $("setup").hidden = !state || state.tools.ready || Boolean(toolsError);
+  meter($("setup-meter"), state?.tools.percent || 0);
+  $("start").disabled = !state?.tools.ready || busy || starting;
+  for (const input of [target, link, time, $("one"), $("whole"), ...document.querySelectorAll("[data-quality]")]) input.disabled = busy || starting;
+  $("empty").hidden = Boolean(issue || (job && !fieldError));
+  $("status-box").hidden = !(issue || busy || job?.phase === "stopped");
+  $("status-box").classList.toggle("error", Boolean(issue));
+  $("action").hidden = Boolean(toolsError);
+  $("action").textContent = busy ? "Stop" : "Try again";
+  $("job-meter").hidden = !busy;
+  meter($("job-meter"), job?.percent || 0);
+  let status = issue || "";
+  if (!status && busy) {
+    const model = state.targets.find(item => item.id === job.target).label.split(" · ")[0];
+    if (job.phase === "probe") status = "Reading video details…";
+    if (job.phase === "download") status = "Downloading video · " + model + " · " + job.percent + "%";
+    if (job.phase === "cut") {
+      const unit = job.target === "flova" ? "part" : "clip";
+      status = "Cutting " + unit + " " + Math.min(job.partsDone + 1, job.partsTotal) + " of " + job.partsTotal + " · " + model;
+    }
+    if (job.etaSeconds > 0) status += " · about " + Math.ceil(job.etaSeconds / 60) + " min left";
+  }
+  if (!status && job?.phase === "stopped") status = completed ? "Stopped · " + completed + (completed === 1 ? " file saved" : " files saved") : "Stopped before any files were saved.";
+  $("status").textContent = status;
+  $("job-meter").setAttribute("aria-label", job?.phase === "download" ? "Download progress" : "Cutting progress");
+  $("done-head").hidden = !done;
+  $("gallery").hidden = !completed;
+  $("folder").hidden = !(completed && !busy);
+  if (done) showResult();
+  $("gallery-source").querySelector("span").textContent = job?.title || "";
+  sizeGallery();
+  updatePath();
+  const phase = [job?.id,job?.phase,issue].join(" ");
+  if (announced !== phase) {
+    announced = phase;
+    $("announcement").textContent = done ? $("result-title").textContent : status || job?.error?.message || "";
+  }
+}
+
+async function refresh() {
+  clearTimeout(pollTimer);
+  const version = ++pollVersion;
+  try {
+    const latest = await api("state");
+    if (version !== pollVersion) return;
+    const firstLoad = !state;
+    if (firstLoad) {
+      for (const item of latest.targets) {
+        const option = new Option(item.label, item.id);
+        option.dataset.seconds = item.seconds;
+        target.add(option);
+      }
+    }
+    state = latest;
+    if (!saving) {
+      quality = state.settings.quality;
+      target.value = state.settings.target;
+    }
+    if (firstLoad && latest.job) {
+      link.value = latest.job.url;
+      $("one").checked = latest.job.mode === "one";
+      $("whole").checked = !$("one").checked;
+      explicitMode = Boolean(latest.job.mode);
+      time.value = latest.job.start || "0:00";
+      fillTimestamp();
+    }
+    updateTarget();
+    const dir = state.settings.outputDir;
+    const sep = state.os === "windows" ? String.fromCharCode(92) : "/";
+    $("destination").textContent = dir.split(sep).filter(Boolean).slice(-2).join(" › ") || dir;
+    $("destination").title = dir;
+    if (state.job?.id !== job?.id) {
+      clearFiles();
+      invalid(link, "");
+      invalid(time, "");
+    }
+    job = state.job;
+    if (job && completed < job.files.length) {
+      const follow = followCuts && working();
+      addFiles(job.files.length, working());
+      if (follow) requestAnimationFrame(() => { if (followCuts) parts.scrollLeft = parts.scrollWidth; });
+    }
+    render();
+    if (job?.error?.code === "start_past_end" && fieldJob !== job.id) {
+      fieldJob = job.id;
+      showError(job.error);
+    }
+  } catch (error) {
+    if (version === pollVersion) showError(error);
+  } finally {
+    if (version === pollVersion) pollTimer = setTimeout(refresh, working() ? 500 : 5000);
+  }
+}
+
+function saveSettings() {
+  const change = {target: target.value, quality};
+  saving++;
+  settingsQueue = settingsQueue.then(() => api("settings", change)).catch(showError).finally(() => saving--);
+  updateTarget();
+}
+
+async function start() {
+  if (starting || working()) return;
+  errorMessage = "";
+  const url = videoURL(link.value);
+  if (!url) {
+    showError({code: "not_link", message: "This isn't a YouTube video link."});
+    return;
+  }
+  if (!state?.tools.ready) return;
+  invalid(link, "");
+  const body = {url: url.href, target: target.value};
+  if (target.value === "flova") body.quality = quality;
+  else {
+    body.mode = $("one").checked ? "one" : "whole";
+    if (body.mode === "one") {
+      if (!Number.isFinite(parsedTime())) {
+        invalid(time, "Enter a start time like 12:30.");
+        time.focus();
+        return;
+      }
+      body.start = time.value.trim();
+    }
+  }
+  starting = true;
+  render();
+  try {
+    await settingsQueue;
+    await api("start", body);
+  } catch (error) {
+    showError(error);
+  } finally {
+    starting = false;
+    await refresh();
+  }
+}
+
+async function openFile(file) {
+  try { await api("open", file ? {file} : {}); }
+  catch (error) { if (preview.open) toast(connectionError || "Something went wrong. Try again."); else showError(error); }
+}
+$("form").onsubmit = event => { event.preventDefault(); start(); };
+link.oninput = () => {
+  errorMessage = "";
+  invalid(link, "");
+  invalid(time, "");
+  fillTimestamp();
+  render();
+};
+link.onpaste = event => {
+  const text = event.clipboardData?.getData("text/plain");
+  if (!text) return;
+  event.preventDefault();
+  link.value = text.trim();
+  fillTimestamp();
+  start();
+};
+target.onchange = () => { saveSettings(); fillTimestamp(); invalid(time, ""); };
+for (const button of document.querySelectorAll("[data-quality]")) button.onclick = () => {
+  quality = button.dataset.quality;
+  saveSettings();
+};
+for (const id of ["whole","one"]) $(id).onclick = () => { explicitMode = true; invalid(time, ""); };
+time.oninput = () => {
+  explicitMode = true;
+  $("one").checked = true;
+  invalid(time, "");
+  const url = videoURL(link.value);
+  if (url?.searchParams.has("t")) { url.searchParams.delete("t"); link.value = url.href; }
+};
+$("action").onclick = async () => {
+  errorMessage = "";
+  if (!working()) { await start(); return; }
+  try { await api("stop", {}); await refresh(); } catch (error) { showError(error); }
+};
+$("change").onclick = async () => {
+  $("change").disabled = true;
+  try { await api("choose-folder", {}); await refresh(); }
+  catch (error) { showError(error); }
+  finally { $("change").disabled = false; }
+};
+$("open").onclick = () => openFile();
+$("copy").onclick = () => copyText(job.folder, "Path copied");
+const observer = new ResizeObserver(() => { sizeGallery(); updatePath(); });
+observer.observe(parts);
+observer.observe($("path-text"));
+observer.observe($("preview-path"));
+function ping() {
+  api("ping", {}).catch(() => {});
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") ping();
+});
+ping();
+setInterval(ping, 5000);
+refresh();
+</script>
+</body>
+</html>
